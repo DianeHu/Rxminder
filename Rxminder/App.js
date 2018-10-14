@@ -130,6 +130,30 @@ export default class ImagePickerExample extends React.Component {
         );
     }
 
+    uploadExpress(uriString) {
+        // Instantiate a FormData() object
+        /*const image = {
+            uri: uriString,
+            type: 'image/jpeg',
+            name: 'myImage' + '-' + Date.now() + '.jpg'
+        }
+
+        const imgBody = new FormData();
+        // append the image to the object with the title 'image'
+        //body.append('image', image);*/
+        const url = 'https://guarded-headland-19054.herokuapp.com/';
+        // Perform the request. Note the content type - very important
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'multipart/form-data',
+            }
+        }).then(res => console.log(res))
+            //.then(results => console.log(results))
+            //.catch(error => console.log(error));
+    }
+
     _takeImage = async() => {
         const { status } = await Permissions.askAsync(Permissions.CAMERA);
         if (status === 'granted') {
@@ -140,6 +164,7 @@ export default class ImagePickerExample extends React.Component {
             if (!result.cancelled) {
                 //CameraRoll.saveToCameraRoll((await Expo.ImagePicker.launchCameraAsync({})).uri);
                 this.setState({ image: result.uri });
+                this.uploadExpress(result.uri);
             }
         }
     }
@@ -155,6 +180,7 @@ export default class ImagePickerExample extends React.Component {
 
             if (!result.cancelled) {
                 this.setState({ image: result.uri });
+                this.uploadExpress(result.uri);
             }
         } else {
             throw new Error('Camera roll permission not granted');
