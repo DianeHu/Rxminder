@@ -1,112 +1,8 @@
 import React from 'react';
 import { Button, Image, View } from 'react-native';
 import { ImagePicker, Permissions } from 'expo';
-
-//
-// import React, { Component } from 'react';
-// import { Text, View } from 'react-native';
-//
-// export default class HelloWorldApp extends Component {
-//     render() {
-//         return (
-//             <View>
-//                 <Text>Hello world!</Text>
-//             </View>
-//         );
-//     }
-// }
-
-// import React from 'react';
-// import {
-//     AppRegistry,
-//     StyleSheet,
-//     Text,
-//     View,
-//     PixelRatio,
-//     TouchableOpacity,
-//     Image,
-// } from 'react-native';
-//
-// import ImagePicker from 'react-native-image-picker';
-// export default class App extends React.Component {
-//
-//     state = {
-//         avatarSource: null,
-//         // videoSource: null
-//     };
-//
-//     selectPhotoTapped() {
-//         const options = {
-//             quality: 1.0,
-//             maxWidth: 500,
-//             maxHeight: 500,
-//             storageOptions: {
-//                 skipBackup: true
-//             }
-//         };
-//
-//         ImagePicker.showImagePicker(options, (response) => {
-//             console.log('Response = ', response);
-//
-//             if (response.didCancel) {
-//                 console.log('User cancelled photo picker');
-//             }
-//             else if (response.error) {
-//                 console.log('ImagePicker Error: ', response.error);
-//             }
-//             else if (response.customButton) {
-//                 console.log('User tapped custom button: ', response.customButton);
-//             }
-//             else {
-//                 let source = { uri: response.uri };
-//
-//                 // You can also display the image using data:
-//                 // let source = { uri: 'data:image/jpeg;base64,' + response.data };
-//
-//                 this.setState({
-//                     avatarSource: source
-//                 });
-//             }
-//         });
-//     }
-//
-//
-//     render() {
-//         return (
-//             <View style={styles.container}>
-//                 <TouchableOpacity onPress={this.selectPhotoTapped.bind(this)}>
-//                     <View style={[styles.avatar, styles.avatarContainer, {marginBottom: 20}]}>
-//                         { this.state.avatarSource === null ? <Text>Select a Photo</Text> :
-//                             <Image style={styles.avatar} source={this.state.avatarSource} />
-//                         }
-//                     </View>
-//                 </TouchableOpacity>
-//             </View>
-//         );
-//     }
-//
-// }
-//
-// const styles = StyleSheet.create({
-//     container: {
-//         flex: 1,
-//         justifyContent: 'center',
-//         alignItems: 'center',
-//         backgroundColor: '#F5FCFF'
-//     },
-//     avatarContainer: {
-//         borderColor: '#9B9B9B',
-//         borderWidth: 1 / PixelRatio.get(),
-//         justifyContent: 'center',
-//         alignItems: 'center'
-//     },
-//     avatar: {
-//         borderRadius: 75,
-//         width: 150,
-//         height: 150
-//     }
-// });
-
+import ImgToBase64 from 'react-native-image-base64';
+import * as body from "express";
 
 export default class ImagePickerExample extends React.Component {
     state = {
@@ -130,16 +26,90 @@ export default class ImagePickerExample extends React.Component {
         );
     }
 
+    stringToUint8Array(str) {
+        const length = str.length
+        const array = new Uint8Array(new ArrayBuffer(length))
+        for(let i = 0; i < length; i++) array[i] = str.charCodeAt(i)
+        return array
+    }
+
+    uploadExpress(uriString) {
+        // Instantiate a FormData() object
+        const image = {
+            uri: uriString,
+            type: 'image/jpeg',
+            name: 'myImage' + '-' + Date.now() + '.jpg'
+        }
+
+        const imgBody = new FormData();
+        // append the image to the object with the title 'image'
+        body.append('image', image);
+        const url = 'http://localhost:5000/';
+        // Perform the request. Note the content type - very important
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'multipart/form-data',
+            },
+            body: imgBody
+        }).then(res => res.json()).then(results => console.log(results))
+            .catch(error => console.log(error));
+    }
+
+
+    upload(uri) {
+        console.log(uri);
+        console.log("THIS IS THE URI");
+        /*try {
+            FileSystem.readAsStringAsync(uri).then(content => this.postTo(base64.fromByteArray(this.stringToUint8Array(content))));
+        } catch(e) {
+            console.warn('fileToBase64()', e.message)
+            return ''
+        }*/
+        ImgToBase64.getBase64String(uri).then(base64String => /*this.postTo(base64String*/console.log(base64String)).catch(err => console.log(err));
+    }
+
+    uploadExpress(uriString) {
+        const image = {
+            uri: uriString,
+            type: 'image/jpeg',
+            name: 'myImage' + '-' + Date.now() + '.jpg'
+        }
+
+        const imgBody = new FormData();
+        body.append('image', image);
+        const url = 'https://guarded-headland-19054.herokuapp.com/';
+
+        fetch(url, {
+            method: 'GET'
+            /*headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'multipart/form-data',
+            },
+            body: imgBody*/
+        }).then(res => res.json()).then(results => {
+            console.log("success");
+        }).catch(error => {
+            console.log("error");
+        })
+    }
+
+    postTo(stringBody) {
+        fetch('https://rxminder-219319.appspot.com/?string=' + stringBody);
+    }
+
     _takeImage = async() => {
         const { status } = await Permissions.askAsync(Permissions.CAMERA);
         if (status === 'granted') {
             let result = await ImagePicker.launchCameraAsync({
-
             });
 
             if (!result.cancelled) {
                 //CameraRoll.saveToCameraRoll((await Expo.ImagePicker.launchCameraAsync({})).uri);
                 this.setState({ image: result.uri });
+                console.log(result);
+                this.uploadExpress(result.uri);
             }
         }
     }
@@ -151,10 +121,10 @@ export default class ImagePickerExample extends React.Component {
                 allowsEditing: true,
                 aspect: [4, 3],
             });
-            console.log(result);
 
             if (!result.cancelled) {
                 this.setState({ image: result.uri });
+                this.uploadExpress(result.uri);
             }
         } else {
             throw new Error('Camera roll permission not granted');
